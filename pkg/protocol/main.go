@@ -10,18 +10,14 @@ type GenericResponse struct {
 	Status string `json:"status"`
 }
 
-type RequestSites struct {
+type GetSiteRequest struct {
 	GenericRequest
-	Type   string `json:"type"`
-	Domain string `json:"domain"`
+	Url string `json:"url"`
 }
 
-type ResponseSites struct {
+type GetSiteResponse struct {
 	GenericResponse
-	ID       int       `json:"id"`
-	Name     string    `json:"name"`
-	PageID   int       `json:"page_id"`
-	LastSeen time.Time `json:"lastseen"`
+	Url string `json:"url"`
 }
 
 type PostSites struct {

@@ -21,12 +21,11 @@ func main() {
 		defer conn.Close()
 
 		// Création de la demande du client
-		request := protocol.RequestSites{
+		request := protocol.GetSiteRequest{
 			GenericRequest: protocol.GenericRequest{
 				Command: "get_sites",
 			},
-			Type:   "example",
-			Domain: "example.com",
+			Url: "http://62.210.124.31/",
 		}
 
 		// Conversion de la demande en JSON
@@ -49,11 +48,14 @@ func main() {
 		}
 
 		// Conversion des données en structure de réponse
-		var response protocol.ResponseSites
+		var response protocol.GetSiteResponse
 		err = json.Unmarshal(buffer[:n], &response)
 		if err != nil {
 			log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)
 		}
+		
+		// Affichage de la réponse
+		fmt.Println("Server response:", response)
 	}()
 
 	// En tant que serveur HTTP
