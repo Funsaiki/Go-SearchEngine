@@ -2,9 +2,9 @@ package donnees
 
 import "time"
 
-type Dir struct {
+type Site struct {
 	ID int `json:"id"`
-	Hostname string `json:"hostname"`
+	Hostip string `json:"hostip"`
 	Domain string `json: "domain"`
 	lastseen time.Time
 }
@@ -17,6 +17,6 @@ type File struct {
 }
 
 type Database struct {
-	Dirs  []Dir  
+	Sites  []Site
 	Files []File 
 }

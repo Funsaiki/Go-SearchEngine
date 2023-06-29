@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"encoding/json"
+	"github.com/Funsaiki/Go-SearchEngine/pkg/protocol"
 )
 
 func main() {
@@ -18,20 +20,40 @@ func main() {
 		}
 		defer conn.Close()
 
-		message := "Hello from search client!"
-		_, err = conn.Write([]byte(message))
-		if err != nil {
-			log.Fatal("Error sending data:", err)
+		// Création de la demande du client
+		request := protocol.RequestSites{
+			GenericRequest: protocol.GenericRequest{
+				Command: "get_sites",
+			},
+			Type:   "example",
+			Domain: "example.com",
 		}
 
+		// Conversion de la demande en JSON
+		requestData, err := json.Marshal(request)
+		if err != nil {
+			log.Fatal("Erreur lors de la conversion de la demande en JSON:", err)
+		}
+
+		// Envoi de la demande via la connexion TCP
+		_, err = conn.Write(requestData)
+		if err != nil {
+			log.Fatal("Erreur lors de l'envoi de la demande:", err)
+		}
+
+		// Lecture de la réponse du serveur depuis la connexion TCP
 		buffer := make([]byte, 1024)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			log.Fatal("Error receiving response:", err)
 		}
 
-		response := buffer[:n]
-		fmt.Println("Server response:", string(response))
+		// Conversion des données en structure de réponse
+		var response protocol.ResponseSites
+		err = json.Unmarshal(buffer[:n], &response)
+		if err != nil {
+			log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)
+		}
 	}()
 
 	// En tant que serveur HTTP

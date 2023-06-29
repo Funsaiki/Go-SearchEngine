@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"encoding/json"
+	"github.com/Funsaiki/Go-SearchEngine/pkg/protocol"
+	"time"
 )
 
 func main() {
@@ -39,11 +42,35 @@ func handleConnection(conn net.Conn) {
 
 	// Process the received data
 	data := buffer[:n]
-	fmt.Println("Received data:", string(data))
 
-	// Send response back to the client
-	response := "Hello from server!"
-	_, err = conn.Write([]byte(response))
+	// Conversion des données en structure de demande
+	var request protocol.RequestSites
+	err = json.Unmarshal(data, &request)
+	if err != nil {
+		log.Println("Erreur lors de la conversion des données en structure de demande:", err)
+		return
+	}
+
+	// Traitement de la demande et génération de la réponse
+	response := protocol.ResponseSites{
+		GenericResponse: protocol.GenericResponse{
+			Status: "success",
+		},
+		ID:       1,
+		Name:     "example",
+		PageID:   123,
+		LastSeen: time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+	}
+
+	// Conversion de la réponse en JSON
+	responseData, err := json.Marshal(response)
+	if err != nil {
+		log.Println("Erreur lors de la conversion de la réponse en JSON:", err)
+		return
+	}
+
+	// Envoi de la réponse au client
+	_, err = conn.Write(responseData)
 	if err != nil {
 		log.Println("Error sending response:", err)
 		return
