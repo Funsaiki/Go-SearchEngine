@@ -6,7 +6,7 @@ type Site struct {
 	ID int `json:"id"`
 	Hostip string `json:"hostip"`
 	Domain string `json: "domain"`
-	lastseen time.Time
+	LastSeen time.Time `json:"lastseen"`
 }
 
 type File struct { 

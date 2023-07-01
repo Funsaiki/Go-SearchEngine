@@ -1,93 +1,96 @@
 package main
-
+ 
 import (
-	"fmt"
+	"io"
 	"log"
 	"net"
-	"encoding/json"
-	"github.com/Funsaiki/Go-SearchEngine/pkg/protocol"
-//	"time"
+	"bytes"
+	"bufio"
+	"strings"
+	"time"
 )
-
-func main() {
-	listener, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer listener.Close()
-
-	fmt.Println("Server started. Listening on port 8080...")
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Println("Error accepting connection:", err)
-			continue
-		}
-
-		go handleConnection(conn)
-	}
+ 
+type JobInterface interface {
+	run() string
 }
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
+type Job        struct { param string }
+type CreateSite   struct { Job }
+type LargeJob   struct { Job }
+type InvalidJob struct { Job }
+ 
+func (job SmallJob) run() string {
+	return "Created site in index = " + job.param
+}
 
-	// Read data from the client
-	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		log.Println("Error reading data:", err)
-		return
-	}
-
-	// Process the received data
-	data := buffer[:n]
-
-	// Conversion des données en structure de demande
-	var genericRequest protocol.GenericRequest
-	err = json.Unmarshal(data, &genericRequest)
-	if err != nil {
-		log.Println("Erreur lors de la conversion des données en structure de demande:", err)
-		return
-	}
-
-	fmt.Println("Received command:", genericRequest.Command)
-
-	// Switch sur la commande de demande
-	switch genericRequest.Command {
-		case "get_sites":
-			// Conversion des données en structure de demande GenericRequest
-			var request protocol.GetSiteRequest
-			err := json.Unmarshal(data, &request)
-			if err != nil {
-				log.Println("Error decoding create site request:", err)
-				return
-			}
-
-			// Traitement de la demande et génération de la réponse
-			response := protocol.GetSiteResponse{
-				GenericResponse: protocol.GenericResponse{
-					Status: "ok",
-				},
-				Url: request.Url,
-			}
-
-			// Conversion de la réponse en JSON
-			responseData, err := json.Marshal(response)
-			if err != nil {
-				log.Println("Erreur lors de la conversion de la réponse en JSON:", err)
-				return
-			}
-			fmt.Println("Sending response:", string(responseData))
-
-			// Envoi de la réponse au client
-			_, err = conn.Write([]byte(responseData))
-			if err != nil {
-				log.Println("Error sending create site response:", err)
-				return
-			}
+func (job SmallJob) run() string {
+	time.Sleep(1 * time.Second)
+	return "Completed in 1 second with param = " + job.param
+}
+ 
+func (job LargeJob) run() string {
+	time.Sleep(5 * time.Second)
+	return "Completed in 5 second with param = " + job.param
+}
+ 
+func (job InvalidJob) run() string {
+	return "Invalid command is specified"
+}
+ 
+func job_runner(job JobInterface, out chan string) {
+  	out <- job.run() + "\n"
+}
+ 
+func job_factory(input string) JobInterface {
+	array := strings.Split(input, " ")
+	if len(array) >= 2 {
+		command := array[0]
+		param   := array[1]
+		switch command {
+		case "SMALL":
+			return CreateSite{Job{param}}
+		case "LARGE":
+			return LargeJob{Job{param}}
 		default:
-			log.Println("Unknown command:", genericRequest.Command)
-			return
+			return InvalidJob{Job{""}}
+		}
+	}
+	return InvalidJob{Job{""}}
+}
+
+func request_handler(conn net.Conn, out chan string) {
+	defer close(out)
+	
+	for {
+		line, err := bufio.NewReader(conn).ReadBytes('\n')
+		if err != nil { return }
+	
+		job := job_factory(strings.TrimRight(string(line), "\n"))
+		go job_runner(job, out)
+	}
+}
+ 
+func send_data(conn net.Conn, in <-chan string) {
+	defer conn.Close()
+	
+	for {
+		message := <- in
+		log.Print(message)
+		io.Copy(conn, bytes.NewBufferString(message))
+	}
+}
+ 
+func main() {
+
+	psock, err := net.Listen("tcp", ":5000")
+	if err != nil { return }
+	
+	for {
+		conn, err := psock.Accept()
+		if err != nil { return }
+
+		channel := make(chan string)
+		go request_handler(conn, channel)
+		go send_data(conn, channel)
 	}
 }

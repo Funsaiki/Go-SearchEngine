@@ -20,11 +20,47 @@ type GetSiteResponse struct {
 	Url string `json:"url"`
 }
 
-type PostSites struct {
+type CreateSiteRequest struct {
 	GenericRequest
-	ID       int       `json:"id"`
-	Name     string    `json:"name"`
-	URL      string    `json:"url"`
-	PageID   int       `json:"page_id"`
-	LastSeen time.Time `json:"lastseen"`
+	Url string `json:"url"`
+}
+
+type CreateSiteResponse struct {
+	GenericResponse
+	Url string `json:"url"`
+}
+
+type GetFileRequest struct {
+	GenericRequest
+	Url string `json:"url"`
+}
+
+type GetFileResponse struct {
+	GenericResponse
+	Url string `json:"url"`
+}
+
+type CreateFileRequest struct {
+	GenericRequest
+	Url string `json:"url"`
+}
+
+type CreateFileResponse struct {
+	GenericResponse
+	Url string `json:"url"`
+}
+
+type UpdateSiteRequest struct {
+	GenericRequest
+	Url string `json:"url"`
+}
+
+type UpdateSiteResponse struct {
+	GenericResponse
+	Url string `json:"url"`
+}
+
+type UpdateFileRequest struct {
+	GenericRequest
+	Url string `json:"url"`
 }

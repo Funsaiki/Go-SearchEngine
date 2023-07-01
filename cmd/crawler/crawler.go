@@ -1,32 +1,62 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"log"
 	"net"
+	"os"
+	"strings"
 )
 
-func main() {
-	serverAddr := "localhost:8080"
+func readInput(out chan<- string) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("Enter command: ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading input:", err)
+			continue
+		}
+		out <- input
+	}
+}
 
-	conn, err := net.Dial("tcp", serverAddr)
+func receiveData(conn net.Conn, in chan<- string) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error receiving data:", err)
+			break
+		}
+		in <- line
+	}
+}
+
+func main() {
+	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
-		log.Fatal("Error connecting to server:", err)
+		fmt.Println("Error connecting to server:", err)
+		return
 	}
 	defer conn.Close()
 
-	message := "Hello from crawler!"
-	_, err = conn.Write([]byte(message))
-	if err != nil {
-		log.Fatal("Error sending data:", err)
-	}
+	inputCh := make(chan string)
+	dataCh := make(chan string)
 
-	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		log.Fatal("Error receiving response:", err)
-	}
+	go readInput(inputCh)
+	go receiveData(conn, dataCh)
 
-	response := buffer[:n]
-	fmt.Println("Server response:", string(response))
+	for {
+		select {
+		case input := <-inputCh:
+			fmt.Fprintf(conn, input)
+		case data := <-dataCh:
+			fmt.Print("Received:", data)
+			if strings.Contains(data, "Invalid command") {
+				fmt.Println("Please enter a valid command.")
+			}
+		}
+	}
 }
