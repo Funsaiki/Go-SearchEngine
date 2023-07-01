@@ -7,35 +7,28 @@ import (
 	"net/http"
 	"encoding/json"
 	"github.com/Funsaiki/Go-SearchEngine/pkg/protocol"
-//	"github.com/Funsaiki/Go-SearchEngine/pkg/donnees"
+	"github.com/Funsaiki/Go-SearchEngine/pkg/donnees"
 	"time"
+	"io"
 )
 
-type Site struct {
-	ID       int       `json:"id"`
-	Name     string    `json:"name"`
-	URL      string    `json:"url"`
-	PageID   int       `json:"page_id"`
-	LastSeen time.Time `json:"lastseen"`
-}
-
-var sites []Site
+var sites []donnees.Site
 
 func main() {
-	sites = append(sites, Site{ID: 1, Name: "Site 1", URL: "https://site1.com", PageID: 123, LastSeen: time.Now()})
-	sites = append(sites, Site{ID: 2, Name: "Site 2", URL: "https://site2.com", PageID: 456, LastSeen: time.Now()})
-
-	http.HandleFunc("/sites", handleSites)
+	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Now()})
+	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Now()})
 	
 	// En tant que client
 	go func() {
-		serverAddr := "localhost:8080"
+		serverAddr := "localhost:5000"
 
 		conn, err := net.Dial("tcp", serverAddr)
 		if err != nil {
 			log.Fatal("Error connecting to server:", err)
 		}
 		defer conn.Close()
+
+		http.HandleFunc("/sites", handleSites)
 
 		// Création de la demande du client
 		request := protocol.GetSiteRequest{
@@ -80,9 +73,9 @@ func main() {
 		fmt.Fprint(w, "Hello from search server!")
 	})
 
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 
-	url := "http://localhost:8081/sites"
+	url := "http://localhost:8080/sites"
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -90,7 +83,6 @@ func main() {
 	}
 	defer response.Body.Close()
 
-	var sites []string
 	err = json.NewDecoder(response.Body).Decode(&sites)
 	if err != nil {
 		log.Fatal(err)
@@ -100,6 +92,7 @@ func main() {
 }
 
 func handleSites(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Sites", sites)
 	if r.Method == http.MethodGet {
 		// Récupérer la liste des sites
 		responseData, err := json.Marshal(sites)
@@ -113,6 +106,26 @@ func handleSites(w http.ResponseWriter, r *http.Request) {
 
 		// Envoyer la réponse
 		w.Write(responseData)
+	} else if r.Method == http.MethodPost {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error reading request body", http.StatusInternalServerError)
+			return
+		}
+
+		var getSite donnees.Site
+		err = json.Unmarshal(body, &getSite)
+		if err != nil {
+			log.Println("Erreur lors de la conversion des données en structure de demande:", err)
+			return
+		}
+		
+		sites = append(sites, getSite)
+		// Définir l'en-tête Content-Type sur application/json
+		w.Header().Set("Content-Type", "application/json")
+
+		// Envoyer la réponse
+		w.Write([]byte("test"))
 	} else {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}
