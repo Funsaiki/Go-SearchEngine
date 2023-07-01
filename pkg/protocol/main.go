@@ -1,6 +1,9 @@
 package protocol
 
-import "time"
+import (
+	"time"
+	"github.com/Funsaiki/Go-SearchEngine/pkg/donnees"
+)
 
 type GenericRequest struct {
 	Command string `json:"command"`
@@ -12,12 +15,13 @@ type GenericResponse struct {
 
 type GetSiteRequest struct {
 	GenericRequest
-	Url string `json:"url"`
+	Query string `json:"query"`
+	Filter string `json:"filter"`
 }
 
 type GetSiteResponse struct {
 	GenericResponse
-	Url string `json:"url"`
+	Sites []donnees.Site `json:"sites"`
 }
 
 type PostSites struct {

@@ -6,8 +6,11 @@ import (
 	"net"
 	"encoding/json"
 	"github.com/Funsaiki/Go-SearchEngine/pkg/protocol"
-//	"time"
+	"github.com/Funsaiki/Go-SearchEngine/pkg/donnees"
+	"time"
 )
+
+var sites []donnees.Site
 
 func main() {
 	listener, err := net.Listen("tcp", ":5000")
@@ -53,6 +56,9 @@ func handleConnection(conn net.Conn) {
 
 	fmt.Println("Received command:", genericRequest.Command)
 
+	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Now()})
+	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Now()})
+
 	// Switch sur la commande de demande
 	switch genericRequest.Command {
 		case "get_sites":
@@ -69,7 +75,7 @@ func handleConnection(conn net.Conn) {
 				GenericResponse: protocol.GenericResponse{
 					Status: "ok",
 				},
-				Url: request.Url,
+				Sites: sites,
 			}
 
 			// Conversion de la réponse en JSON
