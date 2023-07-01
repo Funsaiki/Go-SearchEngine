@@ -13,6 +13,9 @@ import (
 var sites []donnees.Site
 
 func main() {
+	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Now()})
+	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Now()})
+
 	listener, err := net.Listen("tcp", ":5000")
 	if err != nil {
 		log.Fatal(err)
@@ -56,9 +59,6 @@ func handleConnection(conn net.Conn) {
 
 	fmt.Println("Received command:", genericRequest.Command)
 
-	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Now()})
-	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Now()})
-
 	// Switch sur la commande de demande
 	switch genericRequest.Command {
 		case "get_sites":
@@ -92,6 +92,44 @@ func handleConnection(conn net.Conn) {
 				log.Println("Error sending create site response:", err)
 				return
 			}
+			
+			return
+		case "create_site":
+			fmt.Println("Received command:", genericRequest.Command)
+			// Conversion des données en structure de demande GenericRequest
+			var request protocol.CreateSiteRequest
+			err := json.Unmarshal(data, &request)
+			if err != nil {
+				log.Println("Error decoding create site request:", err)
+				return
+			}
+			
+			sites = append(sites, request.Site)
+			fmt.Println("Received site:", request.Site)
+
+			response := protocol.CreateSiteResponse{
+				GenericResponse: protocol.GenericResponse{
+					Status: "ok",
+				},
+				Site: request.Site,
+			}
+
+			// Conversion de la réponse en JSON
+			responseData, err := json.Marshal(response)
+			if err != nil {
+				log.Println("Erreur lors de la conversion de la réponse en JSON:", err)
+				return
+			}
+			fmt.Println("Sending response:", string(responseData))
+
+			// Traitement de la demande et génération de la réponse
+			_, err = conn.Write([]byte(responseData))
+			if err != nil {
+				log.Println("Error sending create site response:", err)
+				return
+			}
+
+			return
 		default:
 			log.Println("Unknown command:", genericRequest.Command)
 			return
