@@ -38,8 +38,7 @@ func main() {
 }
 
 func visitSite(site donnees.Site, index int) {
-	fmt.Println("Visiting oldest site...")
-
+	fmt.Println("Visiting oldest site..." + site.Hostip)
 	// Make HTTP GET request
 	res, err := http.Get(site.Hostip)
 	if err != nil {
@@ -56,14 +55,89 @@ func visitSite(site donnees.Site, index int) {
 		log.Fatal(err)
 	}
 
+	allFiles := getFileRequest()
+
 	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+
 		title := s.Text()
 		href, _ := s.Attr("href")
-		if href[:1] == "/" {
+		
+		fmt.Printf("Review %d: %s - %s\n", i, title, href)
+		
+		if href[:2] == "//" {
+			href = href[2:]
+		} else if href[:1] == "/" {
 			href = href[1:]
 		}
-		fmt.Printf("Link #%d: %s - %s\n", i, title, site.Hostip + "/" + href)
+
+		var exists bool
+
+		for _, file := range allFiles.Files {
+			if file.Name == title || file.Url == href {
+				exists = true
+				fmt.Println("File already in database.")
+				return 
+			} else {
+				exists = false
+			}
+		}
+
+		if !exists {
+			// Création de la demande du client
+			request := protocol.CreateFileRequest{
+				GenericRequest: protocol.GenericRequest{
+					Command: "create_file",
+				},
+				File: donnees.File{ID: i, Name: title, Url: site.Hostip + href, SiteID: 2, LastSeen: time.Now()},
+			}
+
+			serverAddr := "localhost:5000"
+
+			conn, err := net.Dial("tcp", serverAddr)
+			if err != nil {
+				log.Fatal("Error connecting to server:", err)
+			}
+			defer conn.Close()
+
+			// Conversion de la demande en JSON
+			requestData, err := json.Marshal(request)
+			if err != nil {
+				log.Fatal("Erreur lors de la conversion de la demande en JSON:", err)
+			}
+
+			// Envoi de la demande via la connexion TCP
+			_, err = conn.Write(requestData)
+			if err != nil {
+				log.Fatal("Erreur lors de l'envoi de la demande:", err)
+			}
+
+			// Lecture de la réponse du serveur depuis la connexion TCP
+			buffer := make([]byte, 1024)
+			n, err := conn.Read(buffer)
+			if err != nil {
+				log.Fatal("Error receiving response:", err)
+			}
+
+			// Conversion des données en structure de réponse
+			var response protocol.CreateFileResponse
+			err = json.Unmarshal(buffer[:n], &response)
+			if err != nil {
+				log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)
+			}
+
+			fmt.Println("Response:", response)
+
+			return
+		}
 	})
+
+	serverAddr := "localhost:5000"
+
+	conn, err := net.Dial("tcp", serverAddr)
+	if err != nil {
+		log.Fatal("Error connecting to server:", err)
+	}
+	defer conn.Close()
 
 	// Création de la demande du client
 	request := protocol.UpdateSiteRequest{
@@ -72,14 +146,6 @@ func visitSite(site donnees.Site, index int) {
 		},
 		Site: site,
 	}
-
-	serverAddr := "localhost:5000"
-
-	conn, err := net.Dial("tcp", serverAddr)
-	if err != nil {
-		log.Fatal("Error connecting to server:", err)
-	}	
-	defer conn.Close()
 
 	// Conversion de la demande en JSON
 	requestData, err := json.Marshal(request)
@@ -147,6 +213,54 @@ func getSiteRequest() protocol.GetSiteResponse {
 
 	// Conversion des données en structure de réponse
 	var response protocol.GetSiteResponse
+	err = json.Unmarshal(buffer[:n], &response)
+	if err != nil {
+		log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)
+	}
+
+	// Affichage de la réponse
+	fmt.Println("Server response:", response)
+
+	return response
+}
+
+func getFileRequest() protocol.GetFileResponse {
+	request := protocol.GetFileRequest{
+		GenericRequest: protocol.GenericRequest{
+			Command: "get_files",
+		},
+	}
+
+	serverAddr := "localhost:5000"
+
+	conn, err := net.Dial("tcp", serverAddr)
+	if err != nil {
+		log.Fatal("Error connecting to server:", err)
+	}
+	defer conn.Close()
+
+	// Conversion de la demande en JSON
+	requestData, err := json.Marshal(request)
+	if err != nil {
+		log.Fatal("Erreur lors de la conversion de la demande en JSON:", err)
+	}
+
+	// Envoi de la demande via la connexion TCP
+	_, err = conn.Write(requestData)
+	if err != nil {
+		log.Fatal("Erreur lors de l'envoi de la demande:", err)
+	}
+
+	// Lecture de la réponse du serveur depuis la connexion TCP
+	buffer := make([]byte, 1000000)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		log.Fatal("Error receiving response:", err)
+	}
+
+	fmt.Println("Received data:", string(buffer[:n]))
+	// Conversion des données en structure de réponse
+	var response protocol.GetFileResponse
 	err = json.Unmarshal(buffer[:n], &response)
 	if err != nil {
 		log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)

@@ -52,3 +52,13 @@ type UpdateSiteRequest struct {
 type UpdateSiteResponse struct {
 	GenericResponse
 }
+
+type CreateFileRequest struct {
+	GenericRequest
+	File donnees.File `json:"file"`
+}
+
+type CreateFileResponse struct {
+	GenericResponse
+	File donnees.File `json:"file"`
+}
