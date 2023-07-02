@@ -32,3 +32,14 @@ type CreateSiteResponse struct {
 	GenericResponse
 	Site donnees.Site `json:"site"`
 }
+
+type GetFileRequest struct {
+	GenericRequest
+	Query string `json:"query"`
+	Filter string `json:"filter"`
+}
+
+type GetFileResponse struct {
+	GenericResponse
+	Files []donnees.File `json:"files"`
+}

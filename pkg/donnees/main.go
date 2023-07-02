@@ -13,7 +13,8 @@ type File struct {
 	ID int `json:"id"`
 	Name string `json:"name"`
 	Url string `json:"url"`
-	Page string `json:page"`
+	SiteID int `json:"site_id"`
+	LastSeen time.Time `json:"lastseen"`
 }
 
 type Database struct {

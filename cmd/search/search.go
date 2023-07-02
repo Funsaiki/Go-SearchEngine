@@ -13,6 +13,7 @@ import (
 
 func main() {
 	go http.HandleFunc("/sites", handleSites)
+	go http.HandleFunc("/files", handleFiles)
 
 	// En tant que serveur HTTP
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +21,71 @@ func main() {
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func handleFiles(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		response, err := json.Marshal(getFileRequest())
+		if err != nil {
+			http.Error(w, "Error encoding TCP response", http.StatusInternalServerError)
+			return
+		}
+
+		// Définir l'en-tête Content-Type sur application/json
+		w.Header().Set("Content-Type", "application/json")
+
+		// Envoyer la réponse
+		w.Write(response)
+	} else {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+}
+
+func getFileRequest() protocol.GetFileResponse {
+	request := protocol.GetFileRequest{
+		GenericRequest: protocol.GenericRequest{
+			Command: "get_files",
+		},
+	}
+
+	serverAddr := "localhost:5000"
+
+	conn, err := net.Dial("tcp", serverAddr)
+	if err != nil {
+		log.Fatal("Error connecting to server:", err)
+	}
+	defer conn.Close()
+
+	// Conversion de la demande en JSON
+	requestData, err := json.Marshal(request)
+	if err != nil {
+		log.Fatal("Erreur lors de la conversion de la demande en JSON:", err)
+	}
+
+	// Envoi de la demande via la connexion TCP
+	_, err = conn.Write(requestData)
+	if err != nil {
+		log.Fatal("Erreur lors de l'envoi de la demande:", err)
+	}
+
+	// Lecture de la réponse du serveur depuis la connexion TCP
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		log.Fatal("Error receiving response:", err)
+	}
+
+	// Conversion des données en structure de réponse
+	var response protocol.GetFileResponse
+	err = json.Unmarshal(buffer[:n], &response)
+	if err != nil {
+		log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)
+	}
+
+	// Affichage de la réponse
+	fmt.Println("Server response:", response)
+
+	return response
 }
 
 func handleSites(w http.ResponseWriter, r *http.Request) {

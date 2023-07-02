@@ -10,11 +10,20 @@ import (
 	"time"
 )
 
+var database donnees.Database
+
 var sites []donnees.Site
+var files []donnees.File
 
 func main() {
 	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Now()})
 	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Now()})
+	files = append(files, donnees.File{ID: 1, Name: "Donjons%20&%20Dragons%20-%20L%e2%80%99Honneur%20des%20voleurs%20%5bFR-EN%5d%20(2023).mkv", Url: "http://62.210.124.31/Donjons%20&%20Dragons%20-%20L%e2%80%99Honneur%20des%20voleurs%20%5bFR-EN%5d%20(2023).mkv", SiteID: 2, LastSeen: time.Now()})
+
+	database = donnees.Database{
+		Sites: sites,
+		Files: files,
+	}
 
 	listener, err := net.Listen("tcp", ":5000")
 	if err != nil {
@@ -128,7 +137,38 @@ func handleConnection(conn net.Conn) {
 				log.Println("Error sending create site response:", err)
 				return
 			}
+		case "get_files":
+			// Conversion des données en structure de demande GenericRequest
+			var request protocol.GetFileRequest
+			err := json.Unmarshal(data, &request)
+			if err != nil {
+				log.Println("Error decoding create site request:", err)
+				return
+			}
 
+			// Traitement de la demande et génération de la réponse
+			response := protocol.GetFileResponse{
+				GenericResponse: protocol.GenericResponse{
+					Status: "ok",
+				},
+				Files: files,
+			}
+
+			// Conversion de la réponse en JSON
+			responseData, err := json.Marshal(response)
+			if err != nil {
+				log.Println("Erreur lors de la conversion de la réponse en JSON:", err)
+				return
+			}
+			fmt.Println("Sending response:", string(responseData))
+
+			// Envoi de la réponse au client
+			_, err = conn.Write([]byte(responseData))
+			if err != nil {
+				log.Println("Error sending create site response:", err)
+				return
+			}
+			
 			return
 		default:
 			log.Println("Unknown command:", genericRequest.Command)
