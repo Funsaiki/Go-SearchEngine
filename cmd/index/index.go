@@ -16,9 +16,9 @@ var sites []donnees.Site
 var files []donnees.File
 
 func main() {
-	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Now()})
-	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Now()})
-	files = append(files, donnees.File{ID: 1, Name: "Donjons%20&%20Dragons%20-%20L%e2%80%99Honneur%20des%20voleurs%20%5bFR-EN%5d%20(2023).mkv", Url: "http://62.210.124.31/Donjons%20&%20Dragons%20-%20L%e2%80%99Honneur%20des%20voleurs%20%5bFR-EN%5d%20(2023).mkv", SiteID: 2, LastSeen: time.Now()})
+	sites = append(sites, donnees.Site{ID: 1, Hostip: "http://5.135.178.104:10987/", Domain: "http://5.135.178.104:10987/", LastSeen: time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)})
+	sites = append(sites, donnees.Site{ID: 2, Hostip: "http://62.210.124.31/", Domain: "http://62.210.124.31/", LastSeen: time.Date(2008, time.November, 10, 23, 0, 0, 0, time.UTC)})
+	files = append(files, donnees.File{ID: 1, Name: "Donjons%20&%20Dragons%20-%20L%e2%80%99Honneur%20des%20voleurs%20%5bFR-EN%5d%20(2023).mkv", Url: "http://62.210.124.31/Donjons%20&%20Dragons%20-%20L%e2%80%99Honneur%20des%20voleurs%20%5bFR-EN%5d%20(2023).mkv", SiteID: 2, LastSeen: time.Date(2010, time.November, 10, 23, 0, 0, 0, time.UTC)})
 
 	database = donnees.Database{
 		Sites: sites,
@@ -169,6 +169,48 @@ func handleConnection(conn net.Conn) {
 				return
 			}
 			
+			return
+		case "update_site":
+			// Conversion des données en structure de demande GenericRequest
+			var request protocol.UpdateSiteRequest
+			err := json.Unmarshal(data, &request)
+			if err != nil {
+				log.Println("Error decoding create site request:", err)
+				return
+			}
+
+			siteId := request.Site.ID
+
+			for i, site := range sites {
+				if site.ID == siteId {
+					request.Site.LastSeen = time.Now()
+					sites[i] = request.Site
+					break
+				}
+			}
+
+			// Traitement de la demande et génération de la réponse
+			response := protocol.UpdateSiteResponse{
+				GenericResponse: protocol.GenericResponse{
+					Status: "ok",
+				},
+			}
+
+			// Conversion de la réponse en JSON
+			responseData, err := json.Marshal(response)
+			if err != nil {
+				log.Println("Erreur lors de la conversion de la réponse en JSON:", err)
+				return
+			}
+			fmt.Println("Sending response:", string(responseData))
+
+			// Envoi de la réponse au client
+			_, err = conn.Write([]byte(responseData))
+			if err != nil {
+				log.Println("Error sending create site response:", err)
+				return
+			}
+
 			return
 		default:
 			log.Println("Unknown command:", genericRequest.Command)

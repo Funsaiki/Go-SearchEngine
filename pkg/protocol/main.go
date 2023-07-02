@@ -43,3 +43,12 @@ type GetFileResponse struct {
 	GenericResponse
 	Files []donnees.File `json:"files"`
 }
+
+type UpdateSiteRequest struct {
+	GenericRequest
+	Site donnees.Site `json:"site"`
+}
+
+type UpdateSiteResponse struct {
+	GenericResponse
+}
