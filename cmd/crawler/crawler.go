@@ -252,16 +252,15 @@ func getFileRequest() protocol.GetFileResponse {
 	}
 
 	// Lecture de la réponse du serveur depuis la connexion TCP
-	buffer := make([]byte, 1000000)
-	n, err := conn.Read(buffer)
+	n, err := ioutil.ReadAll(conn)
 	if err != nil {
 		log.Fatal("Error receiving response:", err)
 	}
 
-	fmt.Println("Received data:", string(buffer[:n]))
+	fmt.Println("Received data:", string(n))
 	// Conversion des données en structure de réponse
 	var response protocol.GetFileResponse
-	err = json.Unmarshal(buffer[:n], &response)
+	err = json.Unmarshal(n, &response)
 	if err != nil {
 		log.Fatal("Erreur lors de la conversion de la réponse en structure de données:", err)
 	}
