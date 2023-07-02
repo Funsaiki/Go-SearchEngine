@@ -65,10 +65,12 @@ func visitSite(site donnees.Site, index int) {
 		
 		fmt.Printf("Review %d: %s - %s\n", i, title, href)
 		
-		if href[:2] == "//" {
-			href = href[2:]
-		} else if href[:1] == "/" {
-			href = href[1:]
+		if len(href) > 1 {
+			if href[:2] == "//" {
+				href = href[2:]
+			} else if href[:1] == "/" {
+				href = href[1:]
+			}
 		}
 
 		var exists bool
