@@ -16,9 +16,8 @@ var sites []donnees.Site
 var files []donnees.File
 
 func main() {
-	sites = append(sites, donnees.Site{ID: 1, Hostip: "https://s1.doshakhe.com/series/Money%20Heist/S01/1080p/", Domain: "https://s1.doshakhe.com/", LastSeen: time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)})
-	sites = append(sites, donnees.Site{ID: 2, Hostip: "https://c-romain.fr/", Domain: "https://c-romain.fr/", LastSeen: time.Date(2008, time.November, 10, 23, 0, 0, 0, time.UTC)})
-	files = append(files, donnees.File{ID: 1, Name: "La règle du jeu (1939) - 1080p FR EN x264 aac.mkv", Url: "http://62.210.124.31/La%20r%c3%a8gle%20du%20jeu%20(1939)%20-%201080p%20FR%20EN%20x264%20aac.mkv", SiteID: 2, LastSeen: time.Date(2010, time.November, 10, 23, 0, 0, 0, time.UTC)})
+	sites = append(sites, donnees.Site{ID: 0, Hostip: "https://s1.doshakhe.com/series/Money%20Heist/S01/1080p/", Domain: "https://s1.doshakhe.com/", LastSeen: time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)})
+	sites = append(sites, donnees.Site{ID: 1, Hostip: "https://c-romain.fr/", Domain: "https://c-romain.fr/", LastSeen: time.Date(2008, time.November, 10, 23, 0, 0, 0, time.UTC)})
 	
 	database = donnees.Database{
 		Sites: sites,

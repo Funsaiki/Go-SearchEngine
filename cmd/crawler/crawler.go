@@ -10,6 +10,7 @@ import (
 	"time"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
+	"io/ioutil"
 )
 
 func main() {
@@ -71,14 +72,21 @@ func visitSite(site donnees.Site, index int) {
 		}
 
 		var exists bool
+		var lastId int
 
-		for _, file := range allFiles.Files {
-			if file.Name == title || file.Url == href {
-				exists = true
-				fmt.Println("File already in database.")
-				return 
-			} else {
-				exists = false
+		if allFiles.Files == nil {
+			exists = false
+		} else {
+			last := allFiles.Files[len(allFiles.Files)-1]
+			lastId = last.ID + 1
+			for _, file := range allFiles.Files {
+				if file.Name == title || file.Url == href {
+					exists = true
+					fmt.Println("File already in database.")
+					return 
+				} else {
+					exists = false
+				}
 			}
 		}
 
@@ -88,7 +96,7 @@ func visitSite(site donnees.Site, index int) {
 				GenericRequest: protocol.GenericRequest{
 					Command: "create_file",
 				},
-				File: donnees.File{ID: i, Name: title, Url: site.Hostip + href, SiteID: 2, LastSeen: time.Now()},
+				File: donnees.File{ID: lastId + i, Name: title, Url: site.Hostip + href, SiteID: site.ID, LastSeen: time.Now()},
 			}
 
 			serverAddr := "localhost:5000"
