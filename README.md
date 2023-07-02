@@ -21,7 +21,13 @@ go build -o . ./...
 Finally, you can run the project. You can do it by using the following command lines:
 ```
 ./index
+```
+Then
+```
 ./search
+```
+And
+```
 ./crawler
 ```
 
