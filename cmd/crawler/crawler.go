@@ -8,6 +8,8 @@ import (
 	"github.com/Funsaiki/Go-SearchEngine/pkg/donnees"
 	"encoding/json"
 	"time"
+	"github.com/PuerkitoBio/goquery"
+	"net/http"
 )
 
 func main() {
@@ -37,6 +39,32 @@ func main() {
 
 func visitSite(site donnees.Site, index int) {
 	fmt.Println("Visiting oldest site...")
+
+	// Make HTTP GET request
+	res, err := http.Get(site.Hostip)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	}
+
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+		title := s.Text()
+		href, _ := s.Attr("href")
+		if href[:1] == "/" {
+			href = href[1:]
+		}
+		fmt.Printf("Link #%d: %s - %s\n", i, title, site.Hostip + "/" + href)
+	})
+
 	// Création de la demande du client
 	request := protocol.UpdateSiteRequest{
 		GenericRequest: protocol.GenericRequest{
